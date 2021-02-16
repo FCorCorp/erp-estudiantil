@@ -19,7 +19,7 @@ import java.util.ArrayList;
  * @author Facundo Cordoba
  */
 public class CConnection {
-    public static final String ULR = "jdbc:mysql://localhost:3306/MaquinasDB";
+    public static final String ULR = "jdbc:mysql://localhost:3306/mydb";
     public static final String USERNAME = "root";
     public static final String PASSWORD = "root";
 
@@ -69,13 +69,12 @@ public class CConnection {
         try{
             //System.out.println(maquina.getCodigo().length());
             //System.out.println(maquina.getCodigo());
-            ps = con.prepareStatement("INSERT INTO maquina (codigo, codigoPadre, codigoLinea, descripcion, caracteristicas, tipo) VALUES(?,?,?,?,?,?)");
+            ps = con.prepareStatement("INSERT INTO maquina (codigo, codigoPadre, codigoLinea, descripcion, tipo) VALUES(?,?,?,?,?)");
             ps.setString(1, maquina.getCodigo());
             ps.setString(2, maquina.getCodigoPadre());
             ps.setString(3, maquina.getCodigoLinea());
             ps.setString(4, maquina.getDescripcion());
-            ps.setString(5, "");
-            ps.setString(6, maquina.getTipo());
+            ps.setString(5, maquina.getTipo());
             
             int res = ps.executeUpdate();
             if(res>0){
@@ -115,11 +114,10 @@ public class CConnection {
     
     public void actualizarMaquina(Connection con, Maquina maquina){
         try {
-            ps= con.prepareStatement("UPDATE maquina SET descripcion=?, caracteristicas=?, tipo=? WHERE codigo=?");
+            ps= con.prepareStatement("UPDATE maquina SET descripcion=?, tipo=? WHERE codigo=?");
             ps.setString(1, maquina.getDescripcion());
-            ps.setString(2, "");
-            ps.setString(3, maquina.getTipo());
-            ps.setString(4, maquina.getCodigo());
+            ps.setString(2, maquina.getTipo());
+            ps.setString(3, maquina.getCodigo());
             
             int res = ps.executeUpdate();
             if(res>0){
@@ -134,7 +132,6 @@ public class CConnection {
     
     
     public ArrayList <String[]> obtenerCaracteristicas(Connection con, String codigoLinea, String codigoMaquina){
-        //System.out.println("Query: "+"SELECT * FROM caracteristica WHERE codigoLinea='"+codigoLinea+"' AND codigoMaquina='"+codigoMaquina+"'");
         
         ArrayList <String[]> results = new ArrayList<String[]>();
         try{
@@ -181,7 +178,7 @@ public class CConnection {
     
     public void eliminarCaracteristicas(Connection con, String codigoLinea, String codigoMaquina){
         try {
-            
+
             ps = con.prepareStatement("DELETE FROM caracteristica WHERE codigoLinea='"+codigoLinea+"' AND codigoMaquina='"+codigoMaquina+"'");
 
             int res = ps.executeUpdate();
@@ -189,6 +186,67 @@ public class CConnection {
                 System.out.println("Caracteristicas eliminadas");
             } else{
                 System.out.println("Error al eliminar caracteristicas");
+            }
+            
+            
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    };
+    
+    public void asignarRepuesto(Connection con, String codigoLinea, String codigoMaquina, String codigoRepuesto){
+        try{
+            ps = con.prepareStatement("INSERT INTO maquina_has_repuesto (maquina_codLinea, maquina_codigo, repuesto_cod) VALUES(?,?,?)");
+            ps.setString(1, codigoLinea);
+            ps.setString(2, codigoMaquina);
+            ps.setString(3, codigoRepuesto);
+            
+            int res = ps.executeUpdate();
+            if(res>0){
+                System.out.println("Repuesto asignado correctamente");
+            } else{
+                System.out.println("Error al asignar repuesto");
+            }
+            
+            
+        } catch(Exception e){
+            System.out.println(e);
+        }
+    };
+    
+    public ArrayList <String[]> buscarRepuestoAsignado(Connection con, String codigoLinea, String codigoMaquina){
+        
+        ArrayList <String[]> results = new ArrayList<String[]>();
+
+        try{
+            ps = con.prepareStatement("SELECT * FROM maquina_has_repuesto WHERE maquina_codigoLinea='"+codigoLinea+"' AND maquina_codigo='"+codigoMaquina+"'");
+            res = ps.executeQuery();
+            ResultSetMetaData rsMd = res.getMetaData();
+            int cantidadColumnas = rsMd.getColumnCount();
+            while(res.next()){
+                String[] fila = new String[cantidadColumnas];
+                for(int i=0; i<cantidadColumnas; i++){
+                    fila[i] = res.getString(i+1);
+                }
+                results.add(fila);
+            }
+        } catch(Exception e){
+            System.out.println(e);
+        }
+        return results;
+    };
+    
+    
+    public void eliminarAsignacionRepuesto(Connection con, String codigoLinea, String codigoMaquina, String codigoRepuesto){
+        try {
+
+            ps = con.prepareStatement("DELETE FROM maquina_has_repuesto WHERE maquina_codigoLinea='"+codigoLinea+"' AND maquina_codigo='"+codigoMaquina+"' AND repuesto_cod='"+codigoRepuesto+"'");
+
+            int res = ps.executeUpdate();
+            if(res>0){
+                System.out.println("Asignacion de repuesto eliminada");
+            } else{
+                System.out.println("Error al eliminar asignacion de repuesto");
             }
             
             

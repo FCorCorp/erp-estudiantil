@@ -9,6 +9,7 @@ import Modelo.*;
 import Modelo.Maquina;
 import Vista.VCaracteristicas;
 import Vista.VLinea;
+import Vista.VListaRepuestos;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -34,11 +35,12 @@ public class CLinea implements ActionListener, MouseListener{
     VCaracteristicas vistaCaracteristicas = new VCaracteristicas();
     ArrayList<Caracteristica> caracteristicasMaquina = new ArrayList<Caracteristica>();
     ArrayList<Caracteristica> caracteristicasMaquinaTemp = new ArrayList<Caracteristica>();
-    //Linea linea = new Linea();
     String codigoLinea;
     CArbol contArbol;
     Connection con;
     CConnection controladorConexion = new CConnection();
+    //VListaRepuestos vRepuesto = new VListaRepuestos();
+    String codigoRepuesto;
 
     String elementoSeleccionado="";
     
@@ -50,6 +52,7 @@ public class CLinea implements ActionListener, MouseListener{
         vistaLinea.getBtnEliminar().addActionListener(this);
         vistaLinea.getBtnEditar().addActionListener(this);
         vistaLinea.getBtnCaracteristicas().addActionListener(this);
+        vistaLinea.getBtnBuscar().addActionListener(this);
         contArbol = arbol;
         this.codigoLinea = codigoLinea;
         con = dbconnection;
@@ -91,7 +94,7 @@ public class CLinea implements ActionListener, MouseListener{
         maquina.setCodigoPadre(obj[2]);
         maquina.setCodigoLinea(obj[3]);
         maquina.setDescripcion(obj[4]);
-        maquina.setTipo(obj[6]);
+        maquina.setTipo(obj[5]);
         
         return maquina;
     }
@@ -142,10 +145,6 @@ public class CLinea implements ActionListener, MouseListener{
         return caracteristica;
     }
     
-    public void completarTablaCaracteristicas(){
-        
-    }
-    
     public void completarCampos(){
         limpiarCampos();
         for(Maquina maquina: maquinasLinea){
@@ -155,18 +154,25 @@ public class CLinea implements ActionListener, MouseListener{
                 vistaLinea.getjComboBox1().setSelectedItem(maquina.getTipo());
                 vistaLinea.getCampoCodRepuesto().setText(maquina.getCodigoRepuesto());
                 vistaLinea.getCampoDescripcion().setText(maquina.getDescripcion());
-                //vistaLinea.getCampoCaracteristicas().setText(maquina.getCaracteristicas());
             }
         }
         cargarCaracteristicas(codigoLinea, elementoSeleccionado, vistaLinea.getTablaCaracteristicas());
+        cargarRepuesto();
     }
+    
+    public void cargarRepuesto(){
+        ArrayList <String[]> listaAsignaciones = controladorConexion.buscarRepuestoAsignado(con, codigoLinea, elementoSeleccionado);
+        codigoRepuesto = listaAsignaciones.get(0)[0];
+        vistaLinea.getCampoCodRepuesto().setText(codigoRepuesto);
+    };
+    
+    
     public void limpiarCampos(){
         vistaLinea.getCampoCodMaquina().setText("");
         vistaLinea.getCampoCodPadre().setText("");
         vistaLinea.getjComboBox1().setSelectedIndex(0);
         vistaLinea.getCampoCodRepuesto().setText("");
         vistaLinea.getCampoDescripcion().setText("");
-        //vistaLinea.getCampoCaracteristicas().setText("");
     }
     
     public void deshabilitarCampos (){
@@ -175,7 +181,6 @@ public class CLinea implements ActionListener, MouseListener{
         vistaLinea.getjComboBox1().setEnabled(false);
         vistaLinea.getCampoCodRepuesto().setEnabled(false);
         vistaLinea.getCampoDescripcion().setEnabled(false);
-        //vistaLinea.getCampoCaracteristicas().setEnabled(false);
     }
     
     public void habilitarCampos (){
@@ -184,7 +189,6 @@ public class CLinea implements ActionListener, MouseListener{
         vistaLinea.getjComboBox1().setEnabled(true);
         vistaLinea.getCampoCodRepuesto().setEnabled(true);
         vistaLinea.getCampoDescripcion().setEnabled(true);
-        //vistaLinea.getCampoCaracteristicas().setEnabled(true);
     }
     
     @Override
@@ -200,10 +204,13 @@ public class CLinea implements ActionListener, MouseListener{
             vistaLinea.getBtnAgregar().setText("Aceptar");
             vistaLinea.getBtnEliminar().setText("Cancelar");
             vistaLinea.getBtnEditar().setEnabled(false);
+            vistaLinea.getBtnCaracteristicas().setEnabled(false);
+            vistaLinea.getBtnBuscar().setEnabled(false);
             
             limpiarCampos();
             vistaLinea.getCampoCodPadre().setText(elementoSeleccionado);
             vistaLinea.getCampoCodPadre().setEnabled(false);
+            vistaLinea.getCampoCodRepuesto().setEnabled(false);
             vistaLinea.getBtnEliminar().setEnabled(true);
         }
         if(e.getActionCommand()=="Cancelar"){
@@ -215,6 +222,7 @@ public class CLinea implements ActionListener, MouseListener{
             vistaLinea.getBtnEditar().setEnabled(true);
             vistaLinea.getBtnAgregar().setEnabled(true);
             vistaLinea.getBtnCaracteristicas().setEnabled(true);
+            vistaLinea.getBtnBuscar().setEnabled(true);
             if(elementoSeleccionado.equals(codigoLinea)){
                 vistaLinea.getBtnEliminar().setEnabled(false);
                 vistaLinea.getBtnEditar().setEnabled(false);
@@ -237,9 +245,11 @@ public class CLinea implements ActionListener, MouseListener{
             elementoSeleccionado="";
             crearArbol();
             vistaLinea.getjTree1().setEnabled(true);
+            vistaLinea.getBtnBuscar().setEnabled(true);
             vistaLinea.getBtnAgregar().setText("Agregar");
             vistaLinea.getBtnEliminar().setText("Eliminar");
-            vistaLinea.getCampoCodPadre().setEnabled(true);
+            vistaLinea.getCampoCodPadre().setEnabled(false);
+            
         }
         if(e.getActionCommand()=="Editar"){
             habilitarCampos();
@@ -247,10 +257,12 @@ public class CLinea implements ActionListener, MouseListener{
             vistaLinea.getjTree1().setEnabled(false);
             vistaLinea.getBtnAgregar().setEnabled(false);
             vistaLinea.getBtnCaracteristicas().setEnabled(false);
+            vistaLinea.getBtnBuscar().setEnabled(false);
             vistaLinea.getBtnEditar().setText("Guardar");
             vistaLinea.getBtnEliminar().setText("Cancelar");
             vistaLinea.getCampoCodPadre().setEnabled(false);
             vistaLinea.getCampoCodMaquina().setEnabled(false);
+            vistaLinea.getCampoCodRepuesto().setEnabled(false);
             
             
             
@@ -258,7 +270,9 @@ public class CLinea implements ActionListener, MouseListener{
         if(e.getActionCommand()=="Eliminar"){
             System.out.println(listaMaquinas(elementoSeleccionado));
             controladorConexion.eliminarMaquinas(con, codigoLinea, listaMaquinas(elementoSeleccionado));
+            controladorConexion.eliminarAsignacionRepuesto(con, codigoLinea, elementoSeleccionado, codigoRepuesto);
             crearArbol();
+            
             
             
         }
@@ -278,7 +292,7 @@ public class CLinea implements ActionListener, MouseListener{
             vistaLinea.getBtnEliminar().setText("Eliminar");
             vistaLinea.getBtnAgregar().setEnabled(true);
             vistaLinea.getBtnCaracteristicas().setEnabled(true);
-            vistaLinea.getBtnCaracteristicas().setEnabled(true);
+            vistaLinea.getBtnBuscar().setEnabled(true);
             
         }
         if(e.getActionCommand()=="Gestionar Caracteristicas"){
@@ -292,7 +306,11 @@ public class CLinea implements ActionListener, MouseListener{
             vistaCaracteristicas.setVisible(true);
             vistaLinea.setEnabled(false);
         }
-        
+        if(e.getActionCommand()=="Buscar"){
+            System.out.println("Buscar repuesto");
+            vistaLinea.setEnabled(false);
+            vRepuesto.setVisible(true);
+        }
         
                 
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -312,15 +330,6 @@ public class CLinea implements ActionListener, MouseListener{
                                             vistaCaracteristicas.getFieldValor().getText(),
                                             vistaCaracteristicas.getFieldUnidad().getText()
                                             });
-                
-                /*caracteristicasMaquinaTemp.add(new Caracteristica(  codigoLinea,
-                                                                    vistaLinea.getCampoCodMaquina().getText(),
-                                                                    vistaCaracteristicas.getFieldNombre().getText(),
-                                                                    vistaCaracteristicas.getFieldAbreviacion().getText(), 
-                                                                    vistaCaracteristicas.getFieldValor().getText(),
-                                                                    vistaCaracteristicas.getFieldUnidad().getText()));*/
-                
-                
             }
             if(e.getActionCommand()=="Eliminar"){
                 //System.out.println("Eliminar");
@@ -351,7 +360,7 @@ public class CLinea implements ActionListener, MouseListener{
                 //Guardar las nuevas caracteristicas
                 controladorConexion.agregarCaracteristicas(con, caracteristicasMaquina);
                 //Cargar caracteristicas en tabla de lista de maquinas
-                //Mostrar habilitar vista de arbol de maquinas
+                //Mostrar-habilitar vista de arbol de maquinas
                 vistaCaracteristicas.setVisible(false);
                 cargarCaracteristicas(codigoLinea, elementoSeleccionado, vistaLinea.getTablaCaracteristicas());
                 vistaLinea.setEnabled(true);
@@ -368,6 +377,40 @@ public class CLinea implements ActionListener, MouseListener{
             
             //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
+    };
+    
+    ActionListener alRepuestos  = new ActionListener(){
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            
+            if(e.getActionCommand().equals("Seleccionar")){
+                //Guardar en DB asociacion entre la maquina y el repuesto
+                int fila = vRepuesto.getTbLista().getSelectedRow();
+                String codRepuesto = vRepuesto.getTbLista().getModel().getValueAt(fila, 0).toString();
+                controladorConexion.asignarRepuesto(con, codigoLinea, elementoSeleccionado, codigoRepuesto);
+                //En campo del repuesto mostrar el codigo o nombre del repuesto y habilitar vista de arbol de maquinas
+                vRepuesto.setVisible(false);
+                vistaLinea.setEnabled(true);
+                vistaLinea.getCampoCodRepuesto().setText(codRepuesto);
+            }
+            
+            if(e.getActionCommand().equals("Quitar repuesto")){
+                //Eliminar asignacion de DB
+                controladorConexion.eliminarAsignacionRepuesto(con, codigoLinea, elementoSeleccionado, codigoRepuesto);
+                //Mostrar vista de arbol de maquinas
+                vRepuesto.setVisible(false);
+                vistaLinea.setEnabled(true);
+                vistaLinea.getCampoCodRepuesto().setText("");
+            }
+            
+            if(e.getActionCommand().equals("Salir")){
+                vRepuesto.setVisible(false);
+                vistaLinea.setEnabled(true);
+            }
+            //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+    
     };
     
     
@@ -405,27 +448,8 @@ public class CLinea implements ActionListener, MouseListener{
             vistaLinea.getCampoCodPadre().setText(codigoLinea);
             vistaLinea.getBtnEliminar().setEnabled(false);
             vistaLinea.getBtnEditar().setEnabled(false);
+            cargarRepuesto();
         }
-        
-        
-        
-
-        //System.out.println(selPath);
-        /*String[] tipoElementos =new String[]{"Planta", "Proceso", "Tarea", "Linea"};
-        if(selPath.getPathCount()>1){
-            //System.out.println(selPath.getPathCount());
-            vistaLinea.getjTextField1().setText(tipoElementos[selPath.getPathCount()-2]);
-            vistaLinea.getjTextField2().setText(selPath.getLastPathComponent().toString());
-            if(selPath.getPathCount()-2 == 3){
-                nombreLinea = vPrincipal.getjTextField2().getText();
-                vPrincipal.getBtnInspeccionar().setEnabled(true);
-            }
-            else{
-                nombreLinea = "";
-            vPrincipal.getBtnInspeccionar().setEnabled(false);
-            }
-        }*/
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -442,5 +466,10 @@ public class CLinea implements ActionListener, MouseListener{
     public void mouseExited(MouseEvent e) {
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+    
+    
+    
+    //Action listener de vista de gestion de repuestos
+    
 
 }
